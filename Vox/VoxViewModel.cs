@@ -95,15 +95,16 @@ namespace Vox
 
             WindowsVoices = _Synth.GetInstalledVoices();
 
-            SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
+            LoadSettingsFromDisk();
 
             PauseResumeText = "Pause";
             _Synth.SpeakStarted += _Synth_SpeakStarted;
             _Synth.SpeakCompleted += _Synth_SpeakCompleted;
 
-            GetWindowsVoices();
+            //GetWindowsVoices();
         }
 
+        #region Events
         private void _Synth_SpeakCompleted(object? sender, SpeakCompletedEventArgs e)
         {
             PauseResumeText = "Pause";
@@ -115,7 +116,9 @@ namespace Vox
             PauseResumeText = "Pause";
             SpeechState = _Synth.State;
         }
+        #endregion
 
+        #region Commands
         public void GenerateSpeech(object? parameter)
         {
             if (_Synth.State != SynthesizerState.Ready)
@@ -206,5 +209,54 @@ namespace Vox
             string output = process.StandardOutput.ReadToEnd();
             Console.WriteLine($"Output from DLL: {output}");
         }
+        #endregion
+
+        #region Settings
+        public void SaveSettingsToDisk()
+        {
+            using (FileStream fs = new FileStream(".\\settings.txt", FileMode.OpenOrCreate))
+            {
+                using (StreamWriter sw = new StreamWriter(fs))
+                {
+                    sw.WriteLine(SelectedWindowsVoice?.VoiceInfo.Name); //Voice
+                    sw.WriteLine(SpeechRate); //Rate
+                }
+            }
+        }
+
+        public void LoadSettingsFromDisk()
+        {
+            if (File.Exists(".\\settings.txt"))
+            {
+                using (FileStream fs = new FileStream(".\\settings.txt", FileMode.Open))
+                {
+                    using (StreamReader sr = new StreamReader(fs))
+                    {
+                        string? voiceName = sr.ReadLine();
+                        string? speechRate = sr.ReadLine();
+
+                        if (voiceName != null)
+                        {
+                            SelectedWindowsVoice = WindowsVoices.FirstOrDefault(v => v.VoiceInfo.Name == voiceName);
+                            if (SelectedWindowsVoice == null)
+                                SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
+                        }
+
+                        if (speechRate != null)
+                        {
+                            if (int.TryParse(speechRate, out int intRate))
+                            {
+                                SpeechRate = intRate;
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
+            }
+        }
+        #endregion
     }
 }

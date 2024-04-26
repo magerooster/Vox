@@ -31,5 +31,13 @@ namespace Vox
                 e.Handled = true;
             }
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (DataContext is VoxViewModel vm)
+            {
+                vm.SaveSettingsToDisk();
+            }
+        }
     }
 }
