@@ -8,6 +8,7 @@ using System.Speech.Synthesis;
 using System.Diagnostics;
 using System.IO;
 using System.Globalization;
+using System.Reflection;
 
 namespace Vox
 {
@@ -97,6 +98,8 @@ namespace Vox
             PauseResumeText = "Pause";
             _Synth.SpeakStarted += _Synth_SpeakStarted;
             _Synth.SpeakCompleted += _Synth_SpeakCompleted;
+
+            GetWindowsVoices();
         }
 
         private void _Synth_SpeakCompleted(object? sender, SpeakCompletedEventArgs e)
@@ -111,7 +114,7 @@ namespace Vox
             SpeechState = _Synth.State;
         }
 
-        public async void GenerateSpeech(object parameter)
+        public void GenerateSpeech(object? parameter)
         {
             if (_Synth.State != SynthesizerState.Ready)
             {
@@ -129,18 +132,28 @@ namespace Vox
             builder.StartVoice(new CultureInfo("en-US"));
             builder.AppendText(SpeechText);
             builder.EndVoice();
-
-            _Synth.SpeakAsync(builder);
+            Prompt p = _Synth.SpeakAsync(builder);
         }
 
-        public void GetWindowsVocies()
-        {
-            foreach (InstalledVoice voice in _Synth.GetInstalledVoices())
-            {
-                var info = voice.VoiceInfo;
+        public void GetWindowsVoices()
+        { 
+            var internalVoicesField = typeof(SpeechSynthesizer).GetField("_voiceSynthesis", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                Debug.WriteLine($"Voice found: {info.Name}, {info.Culture}, {info.Age}, {info.Gender}, {info.Description}, {info.Id}, {voice.Enabled}");
+            if (internalVoicesField != null)
+            {
+                // Potentially access and modify the internal voices list
+                // This is a simplified example and might not be accurate
+                object voice = internalVoicesField.GetValue(_Synth);
+
+                //foreach (InstalledVoice voice in _Synth.GetInstalledVoices())
+                //foreach (VoiceInfo info in voices)
+                //{
+                //    //var info = voice.VoiceInfo;
+
+                //    Debug.WriteLine($"Voice found: {info.Name}, {info.Culture}, {info.Age}, {info.Gender}, {info.Description}, {info.Id}");
+                //}
             }
+
         }
 
         public void PauseResume(object parameter)

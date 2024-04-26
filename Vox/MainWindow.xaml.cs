@@ -22,5 +22,14 @@ namespace Vox
 
             DataContext = new VoxViewModel();
         }
+
+        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && DataContext is VoxViewModel vm)
+            {
+                vm.GenerateSpeech(null);
+                e.Handled = true;
+            }
+        }
     }
 }

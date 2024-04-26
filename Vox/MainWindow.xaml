@@ -23,7 +23,7 @@
             <ColumnDefinition Width="100"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBox Text="{Binding SpeechText}" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" Grid.ColumnSpan="2"/>
+        <TextBox Text="{Binding SpeechText, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" Grid.ColumnSpan="2" TextWrapping="Wrap" PreviewKeyDown="TextBox_PreviewKeyDown"/>
         <Button Content="Speak" Grid.Row="1" Grid.Column="2" Command="{Binding CommandGenerateSpeech}" Margin="1"/>
         <Button Content="{Binding PauseResumeText}" Grid.Row="2" Grid.Column="2" Command="{Binding CommandPauseResume}" CommandParameter="{Binding SpeechState}" Margin="1"/>
         <Button Content="Stop" Grid.Row="3" Grid.Column="2" Command="{Binding CommandStop}" CommandParameter="{Binding SpeechState}" Margin="1"/>
