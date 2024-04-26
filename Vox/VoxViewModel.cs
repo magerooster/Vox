@@ -19,6 +19,7 @@ namespace Vox
         public ICommand	CommandGenerateSpeech { get; set; }
         public ICommand CommandPauseResume { get; set; }
         public ICommand CommandStop { get; set; }
+        public ICommand CommandWindowsSettings { get; set; }
         #endregion
 
         #region Properties
@@ -90,6 +91,7 @@ namespace Vox
             CommandGenerateSpeech = new CommandBinding(GenerateSpeech);
             CommandPauseResume = new CommandBinding(PauseResume, (o) => SpeechState != SynthesizerState.Ready);
             CommandStop = new CommandBinding(Stop, (o) => SpeechState != SynthesizerState.Ready);
+            CommandWindowsSettings = new CommandBinding(WindowsSettings);
 
             WindowsVoices = _Synth.GetInstalledVoices();
 
@@ -118,7 +120,9 @@ namespace Vox
         {
             if (_Synth.State != SynthesizerState.Ready)
             {
-                return;
+                _Synth.SpeakAsyncCancelAll();
+                while (_Synth.State != SynthesizerState.Ready)
+                    Thread.Sleep(50);
             }
 
             _Synth.SetOutputToDefaultAudioDevice();
@@ -180,6 +184,27 @@ namespace Vox
         {
             if (SpeechState != SynthesizerState.Ready)
                 _Synth.SpeakAsyncCancelAll();
+        }
+
+        public void WindowsSettings(object parameter)
+        {
+            // Expand the environment variable
+            string sapiPath = Environment.ExpandEnvironmentVariables("%SystemRoot%\\System32\\Speech\\SpeechUX\\sapi.cpl");
+
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = "rundll32.exe",
+                Arguments = $"shell32.dll,Control_RunDLL {sapiPath},,1",
+                UseShellExecute = false,
+                RedirectStandardOutput = true, // Optional: Captures output from the DLL
+            };
+
+            var process = Process.Start(processStartInfo);
+            process.WaitForExit();
+
+            // Optional: Read the captured output (if enabled)
+            string output = process.StandardOutput.ReadToEnd();
+            Console.WriteLine($"Output from DLL: {output}");
         }
     }
 }
