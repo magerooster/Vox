@@ -25,13 +25,13 @@
         </Grid.ColumnDefinitions>
         <TextBox Text="{Binding SpeechText, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" Grid.ColumnSpan="2" TextWrapping="Wrap" PreviewKeyDown="TextBox_PreviewKeyDown"/>
         <Button Content="Speak" Grid.Row="1" Grid.Column="2" Command="{Binding CommandGenerateSpeech}" Margin="1"/>
-        <Button Content="{Binding PauseResumeText}" Grid.Row="2" Grid.Column="2" Command="{Binding CommandPauseResume}" CommandParameter="{Binding SpeechState}" Margin="1"/>
-        <Button Content="Stop" Grid.Row="3" Grid.Column="2" Command="{Binding CommandStop}" CommandParameter="{Binding SpeechState}" Margin="1"/>
+        <Button Content="{Binding PauseResumeText}" Grid.Row="2" Grid.Column="2" Command="{Binding CommandPauseResume}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
+        <Button Content="Stop" Grid.Row="3" Grid.Column="2" Command="{Binding CommandStop}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
         <Button Content="Windows TTS Settings" Grid.Column="0" Grid.Row="4" Command="{Binding CommandWindowsSettings}" Margin="2" Width="150"/>
-        <ComboBox ItemsSource="{Binding WindowsVoices}" SelectedValue="{Binding SelectedWindowsVoice}" DisplayMemberPath="VoiceInfo.Name" Grid.Row="1" Grid.Column="3" Margin="1"/>
+        <ComboBox ItemsSource="{Binding SpeechGenerator.WindowsVoices}" SelectedValue="{Binding SpeechGenerator.SelectedWindowsVoice}" DisplayMemberPath="VoiceInfo.Name" Grid.Row="1" Grid.Column="3" Margin="1"/>
 
         <Label Grid.Row="5" Grid.Column="0" Content="Rate"/>
         <Label Grid.Row="4" Grid.Column="1" Content="Slower &lt;---&gt;  Faster" HorizontalAlignment="Center"/>
-        <Slider Grid.Row="5" Grid.Column="1" Minimum="-10" Maximum="10" Value="{Binding SpeechRate}" IsEnabled="{Binding AllowChangesToSettings}"/>
+        <Slider Grid.Row="5" Grid.Column="1" Minimum="-10" Maximum="10" Value="{Binding SpeechGenerator.VoiceRate}" IsEnabled="{Binding AllowChangesToSettings}"/>
     </Grid>
 </Window>

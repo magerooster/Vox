@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Reflection;
+using Vox.Speech_Engines;
 
 namespace Vox
 {
@@ -23,29 +24,23 @@ namespace Vox
         #endregion
 
         #region Properties
-        private string _SpeechText = string.Empty;
+        private string _SpeechText;
 
-		public string SpeechText
-		{
-			get { return GetField(ref _SpeechText); }
-			set { SetField(ref _SpeechText, value); }
-		}
-
-        private IReadOnlyCollection<InstalledVoice> _WindowsVoices = new List<InstalledVoice>();
-
-        public IReadOnlyCollection<InstalledVoice> WindowsVoices
+        public string SpeechText
         {
-            get { return _WindowsVoices; }
-            set { SetField(ref _WindowsVoices, value); }
+            get { return GetField(ref _SpeechText); }
+            set { SetField(ref _SpeechText, value); }
         }
 
-        private InstalledVoice? _SelectedWindowsVoice;
 
-        public InstalledVoice? SelectedWindowsVoice
+        private ISpeechGenerator _SpeechGenerator;
+
+        public ISpeechGenerator SpeechGenerator
         {
-            get { return _SelectedWindowsVoice; }
-            set { SetField(ref _SelectedWindowsVoice, value); }
+            get { return _SpeechGenerator; }
+            set { SetField(ref _SpeechGenerator, value); }
         }
+
 
         private string _PauseResumeText;
 
@@ -55,138 +50,71 @@ namespace Vox
             set { SetField(ref _PauseResumeText, value); }
         }
 
-        private SpeechSynthesizer _Synth = new SpeechSynthesizer();
-
-        private SynthesizerState _SpeechState;
-
-        public SynthesizerState SpeechState
-        {
-            get { return GetField(ref _SpeechState); }
-            set 
-            { 
-                SetField(ref _SpeechState, value);
-                RaisePropertyChanged(nameof(AllowChangesToSettings));
-            }
-        }
-
         public bool AllowChangesToSettings
         {
-            get { return SpeechState == SynthesizerState.Ready; }
+            get { return SpeechGenerator.State == GeneratorState.Ready; }
         }
-
-        public int SpeechRate
-        {
-            get { return _Synth.Rate; }
-            set 
-            { 
-                _Synth.Rate = value;
-                RaisePropertyChanged(nameof(SpeechRate));
-            }
-        }
-
 
         #endregion Proprties
         public VoxViewModel()
         {
             CommandGenerateSpeech = new CommandBinding(GenerateSpeech);
-            CommandPauseResume = new CommandBinding(PauseResume, (o) => SpeechState != SynthesizerState.Ready);
-            CommandStop = new CommandBinding(Stop, (o) => SpeechState != SynthesizerState.Ready);
+            CommandPauseResume = new CommandBinding(PauseResume, (o) => SpeechGenerator.State != GeneratorState.Ready);
+            CommandStop = new CommandBinding(Stop, (o) => SpeechGenerator.State != GeneratorState.Ready);
             CommandWindowsSettings = new CommandBinding(WindowsSettings);
 
-            WindowsVoices = _Synth.GetInstalledVoices();
+            this.SpeechGenerator = new MicrosoftWindowsTTS();
+            this.SpeechGenerator.Initialize();
+            this.SpeechGenerator.SpeechStateUpdated += SpeechGenerator_SpeechStateUpdated;
 
             LoadSettingsFromDisk();
 
             PauseResumeText = "Pause";
-            _Synth.SpeakStarted += _Synth_SpeakStarted;
-            _Synth.SpeakCompleted += _Synth_SpeakCompleted;
 
             //GetWindowsVoices();
         }
 
-        #region Events
-        private void _Synth_SpeakCompleted(object? sender, SpeakCompletedEventArgs e)
+        private void SpeechGenerator_SpeechStateUpdated(object? sender, SpeechStateUpdatedEventArgs e)
         {
-            PauseResumeText = "Pause";
-            SpeechState = _Synth.State;
+            switch (e.State)
+            {
+                case GeneratorState.Uninitialized:
+                    break;
+                case GeneratorState.Ready:
+                    break;
+                case GeneratorState.Playing:
+                    PauseResumeText = "Pause";
+                    break;
+                case GeneratorState.Paused:
+                    PauseResumeText = "Resume";
+                    break;
+                case GeneratorState.Errored:
+                    break;
+                case GeneratorState.Disposed:
+                    break;
+                default:
+                    break;
+            }
         }
 
-        private void _Synth_SpeakStarted(object? sender, SpeakStartedEventArgs e)
-        {
-            PauseResumeText = "Pause";
-            SpeechState = _Synth.State;
-        }
+        #region Events
+
         #endregion
 
         #region Commands
         public void GenerateSpeech(object? parameter)
         {
-            if (_Synth.State != SynthesizerState.Ready)
-            {
-                _Synth.SpeakAsyncCancelAll();
-                while (_Synth.State != SynthesizerState.Ready)
-                    Thread.Sleep(50);
-            }
-
-            _Synth.SetOutputToDefaultAudioDevice();
-
-            if (SelectedWindowsVoice != null)
-            {
-                _Synth.SelectVoice(SelectedWindowsVoice.VoiceInfo.Name);
-            }
-
-            var builder = new PromptBuilder();
-            builder.StartVoice(new CultureInfo("en-US"));
-            builder.AppendText(SpeechText);
-            builder.EndVoice();
-            Prompt p = _Synth.SpeakAsync(builder);
-        }
-
-        public void GetWindowsVoices()
-        { 
-            var internalVoicesField = typeof(SpeechSynthesizer).GetField("_voiceSynthesis", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (internalVoicesField != null)
-            {
-                // Potentially access and modify the internal voices list
-                // This is a simplified example and might not be accurate
-                object voice = internalVoicesField.GetValue(_Synth);
-
-                //foreach (InstalledVoice voice in _Synth.GetInstalledVoices())
-                //foreach (VoiceInfo info in voices)
-                //{
-                //    //var info = voice.VoiceInfo;
-
-                //    Debug.WriteLine($"Voice found: {info.Name}, {info.Culture}, {info.Age}, {info.Gender}, {info.Description}, {info.Id}");
-                //}
-            }
-
+            this.SpeechGenerator.Start(SpeechText);
         }
 
         public void PauseResume(object parameter)
         {
-            switch (_Synth.State)
-            {
-                case SynthesizerState.Speaking:
-                    _Synth.Pause();
-                    PauseResumeText = "Resume";
-                    break;
-                case SynthesizerState.Paused:
-                    _Synth.Resume();
-                    PauseResumeText = "Pause";
-                    break;
-                case SynthesizerState.Ready:
-                default:
-                    break;
-            }
-
-            SpeechState = _Synth.State;
+            this.SpeechGenerator.PauseUnpause();
         }
 
         public void Stop(object parameter)
         {
-            if (SpeechState != SynthesizerState.Ready)
-                _Synth.SpeakAsyncCancelAll();
+            this.SpeechGenerator.Stop();
         }
 
         public void WindowsSettings(object parameter)
@@ -218,8 +146,7 @@ namespace Vox
             {
                 using (StreamWriter sw = new StreamWriter(fs))
                 {
-                    sw.WriteLine(SelectedWindowsVoice?.VoiceInfo.Name); //Voice
-                    sw.WriteLine(SpeechRate); //Rate
+                    this.SpeechGenerator.SaveSettings(sw);
                 }
             }
         }
@@ -232,29 +159,13 @@ namespace Vox
                 {
                     using (StreamReader sr = new StreamReader(fs))
                     {
-                        string? voiceName = sr.ReadLine();
-                        string? speechRate = sr.ReadLine();
-
-                        if (voiceName != null)
-                        {
-                            SelectedWindowsVoice = WindowsVoices.FirstOrDefault(v => v.VoiceInfo.Name == voiceName);
-                            if (SelectedWindowsVoice == null)
-                                SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
-                        }
-
-                        if (speechRate != null)
-                        {
-                            if (int.TryParse(speechRate, out int intRate))
-                            {
-                                SpeechRate = intRate;
-                            }
-                        }
+                        this.SpeechGenerator.LoadSettings(sr);
                     }
                 }
             }
             else
             {
-                SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
+                this.SpeechGenerator.LoadSettings(null);
             }
         }
         #endregion
