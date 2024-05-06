@@ -10,6 +10,7 @@ using System.IO;
 using System.Globalization;
 using System.Reflection;
 using Vox.Speech_Engines;
+using NAudio.Wave;
 
 namespace Vox
 {
@@ -54,8 +55,7 @@ namespace Vox
         {
             get { return SpeechGenerator.State == GeneratorState.Ready; }
         }
-
-        #endregion Proprties
+        #endregion Properties
         public VoxViewModel()
         {
             CommandGenerateSpeech = new CommandBinding(GenerateSpeech);

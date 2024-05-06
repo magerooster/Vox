@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.Wave;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -81,6 +82,9 @@ namespace Vox.Speech_Engines
 
         public event EventHandler<SpeechStateUpdatedEventArgs>? SpeechStateUpdated;
 
+        private MemoryStream? _audioStream = null;
+        private WaveOutEvent? _wavePlayer = null;
+
         #endregion
         #region Implement ISpeechGenerator
         public void Initialize()
@@ -105,46 +109,79 @@ namespace Vox.Speech_Engines
                     Thread.Sleep(50);
             }
 
-            _Synth.SetOutputToDefaultAudioDevice();
-
             if (SelectedWindowsVoice != null)
             {
                 _Synth.SelectVoice(SelectedWindowsVoice.VoiceInfo.Name);
             }
 
+            _audioStream = new MemoryStream();
+
+            _Synth.SetOutputToWaveStream(_audioStream);
             var builder = new PromptBuilder();
             builder.StartVoice(new CultureInfo(culture));
             builder.AppendText(text);
             builder.EndVoice();
-            _Synth.SpeakAsync(builder);
+            _Synth.Speak(builder);
+
+            _audioStream.Position = 0;
+
+            var waveStream = new WaveFileReader(_audioStream);
+            this._wavePlayer = new WaveOutEvent();
+            this._wavePlayer.Init(waveStream);
+            this._wavePlayer.PlaybackStopped += _wavePlayer_PlaybackStopped;
+
+            if (_wavePlayer != null && _wavePlayer.PlaybackState == PlaybackState.Stopped)
+            {
+                _wavePlayer.Play();
+            }
+        }
+
+        private void _wavePlayer_PlaybackStopped(object? sender, StoppedEventArgs e)
+        {
+            if (_wavePlayer != null)
+            {
+                _wavePlayer.Dispose();
+                _audioStream?.Dispose();
+
+                _audioStream = null;
+                _wavePlayer = null;
+
+                UpdateState(GeneratorState.Ready);
+            }
         }
 
         public void PauseUnpause()
         {
-            switch (_Synth.State)
+            if (_wavePlayer != null)
             {
-                case SynthesizerState.Speaking:
-                    _Synth.Pause();
-                    UpdateState(GeneratorState.Paused);
-                    //PauseResumeText = "Resume";
-                    break;
-                case SynthesizerState.Paused:
-                    _Synth.Resume();
-                    UpdateState(GeneratorState.Playing);
-                    //PauseResumeText = "Pause";
-                    break;
-                case SynthesizerState.Ready:
-                default:
-                    break;
+                switch (_wavePlayer.PlaybackState)
+                {
+                    case PlaybackState.Playing:
+                        _wavePlayer.Pause();
+                        UpdateState(GeneratorState.Paused);
+                        //PauseResumeText = "Resume";
+                        break;
+                    case PlaybackState.Paused:
+                        _wavePlayer.Play();
+                        UpdateState(GeneratorState.Playing);
+                        //PauseResumeText = "Pause";
+                        break;
+                    case PlaybackState.Stopped:
+                    default:
+                        break;
+                }
             }
         }
 
         public void Stop()
         {
-            if (State == GeneratorState.Playing || State == GeneratorState.Paused)
-                _Synth.SpeakAsyncCancelAll();
+            //if (State == GeneratorState.Playing || State == GeneratorState.Paused)
+            //    _Synth.SpeakAsyncCancelAll();
 
-            UpdateState(GeneratorState.Ready);
+            if (_wavePlayer != null && _wavePlayer.PlaybackState != PlaybackState.Stopped)
+            {   
+                _wavePlayer.Stop();
+            }
         }
 
         public void OnSpeechStateChanged(GeneratorState state)
@@ -158,7 +195,7 @@ namespace Vox.Speech_Engines
             file.WriteLine(VoiceSpeed); //Rate
         }
 
-        public void LoadSettings(StreamReader file)
+        public void LoadSettings(StreamReader? file)
         {
             if (file != null)
             {
