@@ -5,33 +5,36 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Vox"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" d:DataContext="{d:DesignInstance Type=local:VoxViewModel, IsDesignTimeCreatable=True}" Closing="Window_Closing">
+        Title="Vox" Height="350" Width="800" d:DataContext="{d:DesignInstance Type=local:VoxViewModel, IsDesignTimeCreatable=True}" Closing="Window_Closing">
+    <Window.Resources>
+        <Style x:Name="VoxDefaultButtonStyle" TargetType="Button">
+            <Setter Property="BorderBrush" Value="Purple"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Background" Value="DarkGray"/>
+            <Setter Property="FontFamily" Value="Courier New"/>
+        </Style>
+        <Image x:Key="ConfigIcon" Source="/Vox;component/Icons/gears.png"/>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="5"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="30*"/>
+            <RowDefinition Height="5"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5"/>
             <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="200*"/>
             <ColumnDefinition Width="100"/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="5"/>
         </Grid.ColumnDefinitions>
-        <TextBox Text="{Binding SpeechText, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" Grid.ColumnSpan="2" TextWrapping="Wrap" PreviewKeyDown="TextBox_PreviewKeyDown"/>
-        <Button Content="Speak" Grid.Row="1" Grid.Column="2" Command="{Binding CommandGenerateSpeech}" Margin="1"/>
-        <Button Content="{Binding PauseResumeText}" Grid.Row="2" Grid.Column="2" Command="{Binding CommandPauseResume}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
-        <Button Content="Stop" Grid.Row="3" Grid.Column="2" Command="{Binding CommandStop}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
-        <Button Content="Windows TTS Settings" Grid.Column="0" Grid.Row="4" Command="{Binding CommandWindowsSettings}" Margin="2" Width="150"/>
-        <ComboBox ItemsSource="{Binding SpeechGenerator.WindowsVoices}" SelectedValue="{Binding SpeechGenerator.SelectedWindowsVoice}" DisplayMemberPath="VoiceInfo.Name" Grid.Row="1" Grid.Column="3" Margin="1"/>
-
-        <Label Grid.Row="5" Grid.Column="0" Content="Rate"/>
-        <Label Grid.Row="4" Grid.Column="1" Content="Slower &lt;---&gt;  Faster" HorizontalAlignment="Center"/>
-        <Slider Grid.Row="5" Grid.Column="1" Minimum="-10" Maximum="10" Value="{Binding SpeechGenerator.VoiceRate}" IsEnabled="{Binding AllowChangesToSettings}"/>
+        <Button Content="{StaticResource ConfigIcon}" Grid.Column="3" Grid.Row="4" Command="{Binding CommandConfigureTTS}" Width="30" Height="30" Margin="1" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+        <TextBox Text="{Binding SpeechText, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Grid.RowSpan="4" Grid.ColumnSpan="2" TextWrapping="Wrap" PreviewKeyDown="TextBox_PreviewKeyDown"/>
+        <Button Content="Speak" Grid.Row="1" Grid.Column="3" Command="{Binding CommandGenerateSpeech}" Margin="1"/> 
+        <Button Content="{Binding PauseResumeText}" Grid.Row="2" Grid.Column="3" Command="{Binding CommandPauseResume}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
+        <Button Content="Stop" Grid.Row="3" Grid.Column="3" Command="{Binding CommandStop}" CommandParameter="{Binding SpeechGenerator.State}" Margin="1"/>
     </Grid>
 </Window>

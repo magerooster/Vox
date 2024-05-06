@@ -17,6 +17,7 @@ namespace Vox.Speech_Engines
         string ApiToken { get; set; }
 
         GeneratorState State { get; }
+        string EnterBehavior { get; set; }
 
         event EventHandler<SpeechStateUpdatedEventArgs>? SpeechStateUpdated;
 

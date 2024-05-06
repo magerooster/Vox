@@ -16,21 +16,54 @@ namespace Vox
 {
     public class VoxViewModel : PropertyChangedBase
     {
+        #region Private Constants
+        public const string ApiWindows = "Microsoft Windows";
+        public const string ApiGoogle = "Google Cloud";
+        public const string BehaviorEnterPause = "Pause";
+        public const string BehaviorEnterStop = "Stop";
+        #endregion
+
         #region Commands
 
         public ICommand	CommandGenerateSpeech { get; set; }
         public ICommand CommandPauseResume { get; set; }
         public ICommand CommandStop { get; set; }
         public ICommand CommandWindowsSettings { get; set; }
+        public ICommand CommandConfigureTTS { get; set; }
         #endregion
 
         #region Properties
-        private string _SpeechText;
+        private string _SpeechText = string.Empty;
 
         public string SpeechText
         {
             get { return GetField(ref _SpeechText); }
             set { SetField(ref _SpeechText, value); }
+        }
+
+        private List<string> _SpeechAPIs = new List<string>()
+        {
+            ApiWindows,
+            ApiGoogle,
+        };
+        
+        public List<string> SpeechAPIs
+        {
+            get { return GetField(ref _SpeechAPIs); }
+            set { SetField(ref _SpeechAPIs, value); }
+        }
+
+
+        private string _SelectedSpeechAPI;
+
+        public string SelectedSpeechAPI
+        {
+            get { return GetField(ref _SelectedSpeechAPI); }
+            set 
+            { 
+                SetField(ref _SelectedSpeechAPI, value);
+                CreateSpeechApi(value);
+            }
         }
 
 
@@ -55,6 +88,19 @@ namespace Vox
         {
             get { return SpeechGenerator.State == GeneratorState.Ready; }
         }
+
+        private List<string> _EnterBehaviors = new List<string>()
+        {
+            BehaviorEnterPause,
+            BehaviorEnterStop,
+        };
+
+        public List<string> EnterBehaviors
+        {
+            get { return GetField(ref _EnterBehaviors); }
+            set { SetField(ref _EnterBehaviors, value); }
+        }
+
         #endregion Properties
         public VoxViewModel()
         {
@@ -62,14 +108,14 @@ namespace Vox
             CommandPauseResume = new CommandBinding(PauseResume, (o) => SpeechGenerator.State != GeneratorState.Ready);
             CommandStop = new CommandBinding(Stop, (o) => SpeechGenerator.State != GeneratorState.Ready);
             CommandWindowsSettings = new CommandBinding(WindowsSettings);
+            CommandConfigureTTS = new CommandBinding(ConfigureTTS);
 
-            this.SpeechGenerator = new MicrosoftWindowsTTS();
-            this.SpeechGenerator.Initialize();
-            this.SpeechGenerator.SpeechStateUpdated += SpeechGenerator_SpeechStateUpdated;
+            _SelectedSpeechAPI = ApiWindows;
+            CreateSpeechApi(ApiWindows);
 
             LoadSettingsFromDisk();
 
-            PauseResumeText = "Pause";
+            _PauseResumeText = "Pause";
 
             //GetWindowsVoices();
         }
@@ -97,6 +143,20 @@ namespace Vox
             }
         }
 
+        private void CreateSpeechApi(string SpeechApiName)
+        {
+            switch (SpeechApiName)
+            {
+                case ApiGoogle:
+                    break;
+                case ApiWindows:
+                default:
+                    _SpeechGenerator = new MicrosoftWindowsTTS();
+                    this.SpeechGenerator.Initialize();
+                    this.SpeechGenerator.SpeechStateUpdated += SpeechGenerator_SpeechStateUpdated;
+                    break;
+            }
+        }
         #region Events
 
         #endregion
@@ -136,6 +196,13 @@ namespace Vox
             // Optional: Read the captured output (if enabled)
             string output = process.StandardOutput.ReadToEnd();
             Console.WriteLine($"Output from DLL: {output}");
+        }
+
+        public void ConfigureTTS(object parameter)
+        {
+            System.Windows.Window configWindow = new Config();
+            configWindow.DataContext = this;
+            configWindow.ShowDialog();
         }
         #endregion
 

@@ -1,0 +1,58 @@
+﻿<Window x:Class="Vox.Config"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Vox"
+        mc:Ignorable="d"
+        Title="Vox Config" Height="450" Width="800" d:DataContext="{d:DesignInstance Type=local:VoxViewModel, IsDesignTimeCreatable=True}" >
+    <TabControl>
+        <TabItem Header="Common">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="5"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="1" Grid.Column="0" Content="API"/>
+                <ComboBox ItemsSource="{Binding SpeechAPIs}" SelectedValue="{Binding SelectedSpeechAPI}" Grid.Row="1" Grid.Column="1" Margin="1"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Voice"/>
+                <ComboBox ItemsSource="{Binding SpeechGenerator.WindowsVoices}" SelectedValue="{Binding SpeechGenerator.SelectedWindowsVoice}" DisplayMemberPath="VoiceInfo.Name" Grid.Row="2" Grid.Column="1" Margin="1,1,1,1"/>
+
+                <Label Grid.Row="4" Grid.Column="0" Content="Rate"/>
+                <Label Grid.Row="3" Grid.Column="1" Content="Slower &lt;---&gt;  Faster" HorizontalAlignment="Center"/>
+                <Slider Grid.Row="4" Grid.Column="1" Minimum="-10" Maximum="10" Value="{Binding SpeechGenerator.VoiceRate}" IsEnabled="{Binding AllowChangesToSettings}"/>
+
+                <Label Grid.Row="5" Grid.Column="0" Content="On Enter Press"/>
+                <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding EnterBehaviors}" SelectedValue="{Binding SpeechGenerator.EnterBehavior}"/>
+            </Grid>
+        </TabItem>
+        <TabItem Header="{x:Static local:VoxViewModel.ApiWindows}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Button Content="Windows TTS Settings" Grid.Column="0" Grid.Row="0" Command="{Binding CommandWindowsSettings}" Margin="2" Width="150"/>
+            </Grid>
+            
+        </TabItem>
+        <TabItem Header="{x:Static local:VoxViewModel.ApiGoogle}">
+            
+        </TabItem>
+    </TabControl>
+</Window>

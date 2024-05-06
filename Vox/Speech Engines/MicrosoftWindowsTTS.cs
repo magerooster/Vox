@@ -78,6 +78,14 @@ namespace Vox.Speech_Engines
             set { SetField(ref _SelectedWindowsVoice, value); }
         }
 
+        private string _EnterBehavior;
+
+        public string EnterBehavior
+        {
+            get { return GetField(ref _EnterBehavior); }
+            set { SetField(ref _EnterBehavior, value); }
+        }
+
         private SpeechSynthesizer _Synth = new SpeechSynthesizer();
 
         public event EventHandler<SpeechStateUpdatedEventArgs>? SpeechStateUpdated;
@@ -93,6 +101,7 @@ namespace Vox.Speech_Engines
             _Synth.SpeakStarted += _Synth_SpeakStarted;
             _Synth.SpeakCompleted += _Synth_SpeakCompleted;
             State = GeneratorState.Ready;
+            EnterBehavior = VoxViewModel.BehaviorEnterPause;
         }
 
         public void Cleanup()
@@ -102,11 +111,19 @@ namespace Vox.Speech_Engines
 
         public void Start(string text, string culture = "en-US")
         {
-            if (_Synth.State != SynthesizerState.Ready)
+            if (this._wavePlayer != null)
             {
-                _Synth.SpeakAsyncCancelAll();
-                while (_Synth.State != SynthesizerState.Ready)
-                    Thread.Sleep(50);
+                switch (EnterBehavior)
+                {
+                    case VoxViewModel.BehaviorEnterStop:
+                        Stop();
+                        return;
+                    case VoxViewModel.BehaviorEnterPause:
+                    default:
+                        PauseUnpause();
+                        return;
+                }
+                
             }
 
             if (SelectedWindowsVoice != null)
@@ -193,6 +210,7 @@ namespace Vox.Speech_Engines
         {
             file.WriteLine(SelectedWindowsVoice?.VoiceInfo.Name); //Voice
             file.WriteLine(VoiceSpeed); //Rate
+            file.WriteLine(EnterBehavior);
         }
 
         public void LoadSettings(StreamReader? file)
@@ -200,8 +218,6 @@ namespace Vox.Speech_Engines
             if (file != null)
             {
                 string? voiceName = file.ReadLine();
-                string? speechRate = file.ReadLine();
-
                 if (voiceName != null)
                 {
                     SelectedWindowsVoice = WindowsVoices.FirstOrDefault(v => v.VoiceInfo.Name == voiceName);
@@ -209,6 +225,7 @@ namespace Vox.Speech_Engines
                         SelectedWindowsVoice = WindowsVoices.FirstOrDefault();
                 }
 
+                string? speechRate = file.ReadLine();
                 if (speechRate != null)
                 {
                     if (int.TryParse(speechRate, out int intRate))
@@ -216,6 +233,14 @@ namespace Vox.Speech_Engines
                         VoiceSpeed = intRate;
                     }
                 }
+
+                string? enterBehavior = file.ReadLine();
+                if (enterBehavior != null)
+                {
+                    EnterBehavior = enterBehavior;
+                }
+
+
             }
             else
             {
